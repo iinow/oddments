@@ -7,16 +7,28 @@ Spring/Jackson 환경에서 중첩 JSON(깊이 6) 역직렬화 시 `JsonNode`와
 - "생각" 말고 수치로 확인하고 싶을 때
 - 제한된 자원(CPU/메모리)에서 상대 차이를 보고 싶을 때
 
-## 실행
+## 실행 (Docker 권장: 동일 CPU/메모리 제한)
 ```bash
 cd ~/.clawdbot/projects/oddments
-./gradlew run --args="--rows 1000000"
+./run_docker_benchmark.sh
 ```
 
-옵션:
+위 스크립트는 아래 조건으로 실행됩니다.
+- CPU: 1 core (`--cpus=1.0`)
+- Memory: 1GB (`--memory=1g`)
+- 결과 CSV: `./out/deserialize_benchmark_java_1m.csv`
+
+직접 실행하고 싶으면:
+```bash
+docker build -t oddments-bench:latest .
+docker run --rm --cpus="1.0" --memory="1g" \
+  -v "$(pwd)/out:/app/out" oddments-bench:latest
+```
+
+앱 옵션(CMD 인자):
 - `--rows` : 생성/처리 레코드 수 (기본 1,000,000)
-- `--data` : NDJSON 파일 경로 (기본 `build/data/payload.ndjson`)
-- `--out` : 결과 CSV (기본 `build/reports/deserialize_benchmark.csv`)
+- `--data` : NDJSON 파일 경로
+- `--out` : 결과 CSV 경로
 
 ## 결과
 CSV 예시 컬럼:
