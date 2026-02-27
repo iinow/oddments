@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.oddments'
+version = '0.1.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+}
+
+application {
+    mainClass = 'com.oddments.bench.DeserializeBenchmarkApp'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
