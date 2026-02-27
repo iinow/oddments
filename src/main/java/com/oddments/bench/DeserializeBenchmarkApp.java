@@ -3,9 +3,12 @@ package com.oddments.bench;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -31,16 +34,39 @@ public class DeserializeBenchmarkApp {
             System.out.println("[1/3] Reusing existing NDJSON: " + dataPath);
         }
 
-        System.out.println("[2/3] Warm-up...");
-        runJsonNode(dataPath, 50_000);
-        runPojo(dataPath, 50_000);
+        String mode = strArg(args, "--mode", "both").toLowerCase(Locale.ROOT);
+        String heapDump = strArg(args, "--heapDump", "");
+
+        System.out.println("[2/3] Warm-up... mode=" + mode);
+        if ("jsonnode".equals(mode)) {
+            runJsonNode(dataPath, 50_000);
+        } else if ("pojo".equals(mode)) {
+            runPojo(dataPath, 50_000);
+        } else {
+            runJsonNode(dataPath, 50_000);
+            runPojo(dataPath, 50_000);
+        }
 
         System.out.println("[3/3] Benchmarking full file...");
-        Result jsonNode = runJsonNode(dataPath, Integer.MAX_VALUE);
-        Result pojo = runPojo(dataPath, Integer.MAX_VALUE);
+        if ("jsonnode".equals(mode)) {
+            Result jsonNode = runJsonNode(dataPath, Integer.MAX_VALUE);
+            writeCsv(outCsv, jsonNode);
+            printSummarySingle(jsonNode, outCsv);
+        } else if ("pojo".equals(mode)) {
+            Result pojo = runPojo(dataPath, Integer.MAX_VALUE);
+            writeCsv(outCsv, pojo);
+            printSummarySingle(pojo, outCsv);
+        } else {
+            Result jsonNode = runJsonNode(dataPath, Integer.MAX_VALUE);
+            Result pojo = runPojo(dataPath, Integer.MAX_VALUE);
+            writeCsv(outCsv, jsonNode, pojo);
+            printSummary(jsonNode, pojo, outCsv);
+        }
 
-        writeCsv(outCsv, jsonNode, pojo);
-        printSummary(jsonNode, pojo, outCsv);
+        if (!heapDump.isBlank()) {
+            dumpHeap(heapDump);
+            System.out.println("Heap dump saved: " + heapDump);
+        }
     }
 
     private static int intArg(String[] args, String key, int def) {
@@ -142,6 +168,17 @@ public class DeserializeBenchmarkApp {
         return rt.totalMemory() - rt.freeMemory();
     }
 
+    private static void dumpHeap(String path) {
+        try {
+            Path p = Path.of(path);
+            Files.createDirectories(p.getParent());
+            HotSpotDiagnosticMXBean mxBean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+            mxBean.dumpHeap(path, true);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to dump heap: " + path, e);
+        }
+    }
+
     private static void writeCsv(Path outCsv, Result... results) throws IOException {
         try (BufferedWriter bw = Files.newBufferedWriter(outCsv)) {
             bw.write("mode,rows,millis,rows_per_sec,mem_before_mb,mem_after_mb,mem_delta_mb,checksum");
@@ -159,6 +196,13 @@ public class DeserializeBenchmarkApp {
                 jsonNode.millis, jsonNode.rowsPerSec(), jsonNode.memDeltaMb());
         System.out.printf(Locale.US, "POJO    : %d ms, %.2f rows/s, Δmem=%.2f MB%n",
                 pojo.millis, pojo.rowsPerSec(), pojo.memDeltaMb());
+        System.out.println("CSV saved: " + outCsv);
+    }
+
+    private static void printSummarySingle(Result r, Path outCsv) {
+        System.out.println("\n===== RESULT =====");
+        System.out.printf(Locale.US, "%s: %d ms, %.2f rows/s, Δmem=%.2f MB%n",
+                r.mode, r.millis, r.rowsPerSec(), r.memDeltaMb());
         System.out.println("CSV saved: " + outCsv);
     }
 
