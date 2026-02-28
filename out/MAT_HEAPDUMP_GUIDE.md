@@ -1,22 +1,23 @@
 # Eclipse Memory Analyzer (MAT) Guide
 
 ## 1) Heap dump 생성 (자동)
+### A. Docker 실행에서 직접 추출 (권장)
 프로젝트 루트에서:
 
 ```bash
-./run_heapdump_compare.sh
+ROWS=10000000 HEAP=200m OUT_SUBDIR=heapdump_docker ./run_docker_heapdump_compare.sh
 ```
 
-기본 출력:
-- `out/heapdump/jsonnode.hprof`
-- `out/heapdump/pojo.hprof`
-- `out/heapdump/gc_jsonnode.log`
-- `out/heapdump/gc_pojo.log`
+출력:
+- `out/heapdump_docker/jsonnode.hprof`
+- `out/heapdump_docker/pojo.hprof`
+- `out/heapdump_docker/gc_jsonnode.log`
+- `out/heapdump_docker/gc_pojo.log`
 
-옵션 예시:
+### B. 호스트 Java로 추출 (옵션)
 
 ```bash
-ROWS=10000000 HEAP=200m OUT_DIR=out/heapdump_10m ./run_heapdump_compare.sh
+./run_heapdump_compare.sh
 ```
 
 ---

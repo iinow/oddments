@@ -54,15 +54,21 @@ python3 plot.py
 ```
 
 ## Heap dump 자동 생성 + MAT 준비
+### Docker 실행에서 직접 추출 (권장)
+```bash
+ROWS=10000000 HEAP=200m OUT_SUBDIR=heapdump_docker ./run_docker_heapdump_compare.sh
+```
+
+### 호스트 Java로 추출 (옵션)
 ```bash
 ./run_heapdump_compare.sh
 ```
 
 생성 파일:
-- `out/heapdump/jsonnode.hprof`
-- `out/heapdump/pojo.hprof`
-- `out/heapdump/gc_jsonnode.log`
-- `out/heapdump/gc_pojo.log`
+- `out/<OUT_SUBDIR>/jsonnode.hprof`
+- `out/<OUT_SUBDIR>/pojo.hprof`
+- `out/<OUT_SUBDIR>/gc_jsonnode.log`
+- `out/<OUT_SUBDIR>/gc_pojo.log`
 - 가이드: `out/MAT_HEAPDUMP_GUIDE.md`
 
 ## 해석 팁
