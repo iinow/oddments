@@ -1,0 +1,3 @@
+mode,rows,millis,rows_per_sec,mem_delta_mb,gc_events,gc_pause_sum_ms,gc_pause_max_ms,gc_pause_p95_ms,peak_before_mb,peak_after_mb,avg_after_mb,peak_old_after_regions
+JsonNode,10000000,30207,331049.09,38.49,756,501.923,16.324,0.665,55.00,2.00,2.00,0.00
+POJO,10000000,29445,339616.23,6.74,459,251.541,17.585,0.447,56.00,2.00,2.00,0.00
