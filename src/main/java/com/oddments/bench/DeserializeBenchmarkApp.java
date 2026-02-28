@@ -36,30 +36,29 @@ public class DeserializeBenchmarkApp {
 
         String mode = strArg(args, "--mode", "both").toLowerCase(Locale.ROOT);
         String heapDump = strArg(args, "--heapDump", "");
-        boolean preGc = boolArg(args, "--preGc", false);
 
-        System.out.println("[2/3] Warm-up... mode=" + mode + ", preGc=" + preGc);
+        System.out.println("[2/3] Warm-up... mode=" + mode);
         if ("jsonnode".equals(mode)) {
-            runJsonNode(dataPath, 50_000, preGc);
+            runJsonNode(dataPath, 50_000);
         } else if ("pojo".equals(mode)) {
-            runPojo(dataPath, 50_000, preGc);
+            runPojo(dataPath, 50_000);
         } else {
-            runJsonNode(dataPath, 50_000, preGc);
-            runPojo(dataPath, 50_000, preGc);
+            runJsonNode(dataPath, 50_000);
+            runPojo(dataPath, 50_000);
         }
 
         System.out.println("[3/3] Benchmarking full file...");
         if ("jsonnode".equals(mode)) {
-            Result jsonNode = runJsonNode(dataPath, Integer.MAX_VALUE, preGc);
+            Result jsonNode = runJsonNode(dataPath, Integer.MAX_VALUE);
             writeCsv(outCsv, jsonNode);
             printSummarySingle(jsonNode, outCsv);
         } else if ("pojo".equals(mode)) {
-            Result pojo = runPojo(dataPath, Integer.MAX_VALUE, preGc);
+            Result pojo = runPojo(dataPath, Integer.MAX_VALUE);
             writeCsv(outCsv, pojo);
             printSummarySingle(pojo, outCsv);
         } else {
-            Result jsonNode = runJsonNode(dataPath, Integer.MAX_VALUE, preGc);
-            Result pojo = runPojo(dataPath, Integer.MAX_VALUE, preGc);
+            Result jsonNode = runJsonNode(dataPath, Integer.MAX_VALUE);
+            Result pojo = runPojo(dataPath, Integer.MAX_VALUE);
             writeCsv(outCsv, jsonNode, pojo);
             printSummary(jsonNode, pojo, outCsv);
         }
@@ -80,13 +79,6 @@ public class DeserializeBenchmarkApp {
     private static String strArg(String[] args, String key, String def) {
         for (int i = 0; i < args.length - 1; i++) {
             if (args[i].equals(key)) return args[i + 1];
-        }
-        return def;
-    }
-
-    private static boolean boolArg(String[] args, String key, boolean def) {
-        for (int i = 0; i < args.length - 1; i++) {
-            if (args[i].equals(key)) return Boolean.parseBoolean(args[i + 1]);
         }
         return def;
     }
@@ -124,11 +116,7 @@ public class DeserializeBenchmarkApp {
         );
     }
 
-    private static Result runJsonNode(Path path, int maxRows, boolean preGc) throws IOException {
-        if (preGc) {
-            System.gc();
-            sleep(200);
-        }
+    private static Result runJsonNode(Path path, int maxRows) throws IOException {
         long memBefore = usedMem();
         Instant start = Instant.now();
         long checksum = 0;
@@ -150,11 +138,7 @@ public class DeserializeBenchmarkApp {
         return new Result("JsonNode", count, millis, memBefore, memAfter, checksum);
     }
 
-    private static Result runPojo(Path path, int maxRows, boolean preGc) throws IOException {
-        if (preGc) {
-            System.gc();
-            sleep(200);
-        }
+    private static Result runPojo(Path path, int maxRows) throws IOException {
         long memBefore = usedMem();
         Instant start = Instant.now();
         long checksum = 0;

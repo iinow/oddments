@@ -5,7 +5,7 @@
 - 데이터: NDJSON, nested depth 6, **10,000,000 rows**
 - JVM: OpenJDK 21
 - 힙: `-Xms200m -Xmx200m`
-- 반복: 모드별 **5회 분리 실행** (`preGc=false`)
+- 반복: 모드별 **5회 분리 실행** (``)
 
 ---
 

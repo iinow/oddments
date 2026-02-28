@@ -27,7 +27,7 @@ docker run --rm \
     # Ensure dataset for requested size
     java -Xms${HEAP} -Xmx${HEAP} -cp 'build/classes:lib/*' \
       com.oddments.bench.DeserializeBenchmarkApp \
-      --mode jsonnode --preGc false --rows ${ROWS} \
+      --mode jsonnode --rows ${ROWS} \
       --data /app/build/data/payload_java_${ROWS}.ndjson \
       --out /app/out/${OUT_SUBDIR}/_warmup_generate.csv >/dev/null
 
@@ -35,7 +35,7 @@ docker run --rm \
     java -Xms${HEAP} -Xmx${HEAP} \
       -Xlog:gc*,gc+heap=debug:file=/app/out/${OUT_SUBDIR}/gc_jsonnode.log:time,uptime,level,tags \
       -cp 'build/classes:lib/*' com.oddments.bench.DeserializeBenchmarkApp \
-      --mode jsonnode --preGc false --rows ${ROWS} \
+      --mode jsonnode --rows ${ROWS} \
       --data /app/build/data/payload_java_${ROWS}.ndjson \
       --out /app/out/${OUT_SUBDIR}/jsonnode.csv \
       $( [ "$DO_HEAPDUMP" = "true" ] && echo "--heapDump /app/out/${OUT_SUBDIR}/jsonnode.hprof" )
@@ -44,7 +44,7 @@ docker run --rm \
     java -Xms${HEAP} -Xmx${HEAP} \
       -Xlog:gc*,gc+heap=debug:file=/app/out/${OUT_SUBDIR}/gc_pojo.log:time,uptime,level,tags \
       -cp 'build/classes:lib/*' com.oddments.bench.DeserializeBenchmarkApp \
-      --mode pojo --preGc false --rows ${ROWS} \
+      --mode pojo --rows ${ROWS} \
       --data /app/build/data/payload_java_${ROWS}.ndjson \
       --out /app/out/${OUT_SUBDIR}/pojo.csv \
       $( [ "$DO_HEAPDUMP" = "true" ] && echo "--heapDump /app/out/${OUT_SUBDIR}/pojo.hprof" )

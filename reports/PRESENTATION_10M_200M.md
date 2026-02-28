@@ -33,7 +33,7 @@
 
 ---
 
-## 4) 반복 5회 결과 (10M, preGc=false)
+## 4) 반복 5회 결과 (10M)
 
 ![repeat-overview](./repeat_10m_200m_nopregc_overview.png)
 
@@ -77,12 +77,12 @@
 
 ## 7) 재현 커맨드 (요약)
 ```bash
-# 10M, preGc=false, 분리 5회
+# 10M, 분리 5회
 java -Xms200m -Xmx200m -Xlog:gc*,gc+heap=debug:file=gc_jsonnode.log:time,uptime,level,tags \
   -cp 'build/classes:lib/*' com.oddments.bench.DeserializeBenchmarkApp \
-  --mode jsonnode --preGc false --rows 10000000 --data build/data/payload_java_10m.ndjson --out jsonnode.csv
+  --mode jsonnode --rows 10000000 --data build/data/payload_java_10m.ndjson --out jsonnode.csv
 
 java -Xms200m -Xmx200m -Xlog:gc*,gc+heap=debug:file=gc_pojo.log:time,uptime,level,tags \
   -cp 'build/classes:lib/*' com.oddments.bench.DeserializeBenchmarkApp \
-  --mode pojo --preGc false --rows 10000000 --data build/data/payload_java_10m.ndjson --out pojo.csv
+  --mode pojo --rows 10000000 --data build/data/payload_java_10m.ndjson --out pojo.csv
 ```
