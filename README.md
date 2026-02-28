@@ -7,16 +7,19 @@ Spring/Jackson 환경에서 중첩 JSON(깊이 6) 역직렬화 시 `JsonNode`와
 - "생각" 말고 수치로 확인하고 싶을 때
 - 제한된 자원(CPU/메모리)에서 상대 차이를 보고 싶을 때
 
-## 실행 (Docker 권장: 동일 CPU/메모리 제한)
+## 실행 (Docker 권장: 벤치 + GC로그 + 힙덤프 + 분석)
 ```bash
 cd ~/.clawdbot/projects/oddments
-./run_docker_benchmark.sh
+ROWS=10000000 HEAP=200m OUT_SUBDIR=docker_10m ./run_docker_benchmark.sh
 ```
 
-위 스크립트는 아래 조건으로 실행됩니다.
-- CPU: 1 core (`--cpus=1.0`)
-- Memory: 1GB (`--memory=1g`)
-- 결과 CSV: `./out/deserialize_benchmark_java_1m.csv`
+기본 조건(환경변수로 변경 가능):
+- CPU: 1 core (`CPU=1.0`)
+- Memory: 1GB (`MEMORY=1g`)
+- Heap: `HEAP=200m`
+- Rows: `ROWS=1000000`
+- Heapdump on/off: `DO_HEAPDUMP=true|false`
+- 분석 산출물 on/off: `DO_ANALYZE=true|false`
 
 직접 실행하고 싶으면:
 ```bash
