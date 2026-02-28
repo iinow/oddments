@@ -20,10 +20,10 @@ for i in $(seq 1 "$REPEATS"); do
   echo "  - repeat #$i"
   docker run --rm \
     --cpus="1.0" \
-    --memory="1g" \
+    --memory="0.2g" \
     -v "$OUT_DIR:/app/out" \
     "$IMAGE_NAME" \
-    --rows 1000000 \
+    --rows 10000000 \
     --data /app/out/payload_1m.ndjson \
     --out "$OUT_CSV" >/dev/null
 
