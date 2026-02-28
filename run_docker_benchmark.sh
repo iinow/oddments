@@ -14,6 +14,11 @@ DO_STATS="${DO_STATS:-true}"
 SAMPLE_SEC="${SAMPLE_SEC:-1}"
 
 mkdir -p "$OUT_DIR/$OUT_SUBDIR"
+rm -f "$OUT_DIR/$OUT_SUBDIR"/jsonnode.hprof "$OUT_DIR/$OUT_SUBDIR"/pojo.hprof \
+      "$OUT_DIR/$OUT_SUBDIR"/jsonnode.csv "$OUT_DIR/$OUT_SUBDIR"/pojo.csv \
+      "$OUT_DIR/$OUT_SUBDIR"/gc_jsonnode.log "$OUT_DIR/$OUT_SUBDIR"/gc_pojo.log \
+      "$OUT_DIR/$OUT_SUBDIR"/gc_memory_detailed.png "$OUT_DIR/$OUT_SUBDIR"/gc_memory_detailed_summary.csv \
+      "$OUT_DIR/$OUT_SUBDIR"/docker_stats.csv "$OUT_DIR/$OUT_SUBDIR"/docker_cpu_mem_chart.png
 
 echo "[1/3] Building Docker image: $IMAGE_NAME"
 docker build -t "$IMAGE_NAME" .
@@ -27,6 +32,7 @@ if [ "$DO_HEAPDUMP" = "true" ]; then
 fi
 
 cid_file=$(mktemp)
+rm -f "$cid_file"
 trap 'rm -f "$cid_file"' EXIT
 
 docker run -d \
@@ -97,6 +103,20 @@ fi
 if [ "$DO_STATS" = "true" ]; then
   python3 plot_docker_stats.py --input "$OUT_DIR/$OUT_SUBDIR/docker_stats.csv" --out "$OUT_DIR/$OUT_SUBDIR/docker_cpu_mem_chart.png"
 fi
+
+# sync core artifacts to reports/<OUT_SUBDIR>
+REPORT_DIR="$(pwd)/reports/$OUT_SUBDIR"
+mkdir -p "$REPORT_DIR"
+cp -f "$OUT_DIR/$OUT_SUBDIR/jsonnode.csv" "$REPORT_DIR/jsonnode.csv"
+cp -f "$OUT_DIR/$OUT_SUBDIR/pojo.csv" "$REPORT_DIR/pojo.csv"
+cp -f "$OUT_DIR/$OUT_SUBDIR/gc_memory_detailed_summary.csv" "$REPORT_DIR/gc_memory_detailed_summary.csv"
+cp -f "$OUT_DIR/$OUT_SUBDIR/gc_memory_detailed.png" "$REPORT_DIR/gc_memory_detailed.png"
+if [ "$DO_STATS" = "true" ]; then
+  cp -f "$OUT_DIR/$OUT_SUBDIR/docker_stats.csv" "$REPORT_DIR/docker_stats.csv"
+  cp -f "$OUT_DIR/$OUT_SUBDIR/docker_cpu_mem_chart.png" "$REPORT_DIR/docker_cpu_mem_chart.png"
+fi
+
+python3 generate_docker_report.py --out-subdir "$OUT_SUBDIR" --out-root "$OUT_DIR" --reports-root "$(pwd)/reports"
 
 echo "Done. Output dir: $OUT_DIR/$OUT_SUBDIR"
 echo "- jsonnode.csv"
