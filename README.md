@@ -48,6 +48,23 @@ python3 plot.py
 생성 파일:
 - `build/reports/deserialize_benchmark.png`
 
+## 자동 분석 리포트 생성 (Markdown)
+```bash
+./analyze_benchmark_to_md.py --input out/macos_10m_5runs_input.txt --out out/BENCHMARK_ANALYSIS_MACBOOK_10M.md
+```
+
+## Heap dump 자동 생성 + MAT 준비
+```bash
+./run_heapdump_compare.sh
+```
+
+생성 파일:
+- `out/heapdump/jsonnode.hprof`
+- `out/heapdump/pojo.hprof`
+- `out/heapdump/gc_jsonnode.log`
+- `out/heapdump/gc_pojo.log`
+- 가이드: `out/MAT_HEAPDUMP_GUIDE.md`
+
 ## 해석 팁
 - 이 샘플은 "절대 성능"보다 "상대 비교"용입니다.
 - GC/JVM옵션/CPU 상태/파일 캐시 상태에 따라 값이 바뀝니다.
