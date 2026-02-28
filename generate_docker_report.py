@@ -55,7 +55,8 @@ def main():
     j = read_single_csv(out_dir / 'jsonnode.csv')
     p = read_single_csv(out_dir / 'pojo.csv')
     g = read_summary(out_dir / 'gc_memory_detailed_summary.csv')
-    s = read_stats(out_dir / 'docker_stats.csv') if (out_dir / 'docker_stats.csv').exists() else None
+    s_json = read_stats(out_dir / 'jsonnode_stats.csv') if (out_dir / 'jsonnode_stats.csv').exists() else None
+    s_pojo = read_stats(out_dir / 'pojo_stats.csv') if (out_dir / 'pojo_stats.csv').exists() else None
 
     def num(v, d=2):
         try:
@@ -80,16 +81,18 @@ def main():
         if row:
             lines.append(f"- {mode}: events={row.get('gc_events')}, pause_sum={num(row.get('gc_pause_sum_ms'))} ms, pause_max={num(row.get('gc_pause_max_ms'))} ms, pause_p95={num(row.get('gc_pause_p95_ms'))} ms")
 
-    if s:
-        lines.append("\n## Container CPU/Memory stats\n")
-        lines.append(f"- samples: {s['samples']}")
-        lines.append(f"- CPU avg: **{s['cpu_avg']:.2f}%**, CPU peak: **{s['cpu_peak']:.2f}%**")
-        lines.append(f"- Mem avg: **{s['mem_avg']:.2f} MB**, Mem peak: **{s['mem_peak']:.2f} MB**\n")
+    if s_json or s_pojo:
+        lines.append("\n## Container CPU/Memory stats (mode-separated)\n")
+        if s_json:
+            lines.append(f"- JsonNode samples: {s_json['samples']}, CPU avg/peak: **{s_json['cpu_avg']:.2f}% / {s_json['cpu_peak']:.2f}%**, Mem avg/peak: **{s_json['mem_avg']:.2f} / {s_json['mem_peak']:.2f} MB**")
+        if s_pojo:
+            lines.append(f"- POJO samples: {s_pojo['samples']}, CPU avg/peak: **{s_pojo['cpu_avg']:.2f}% / {s_pojo['cpu_peak']:.2f}%**, Mem avg/peak: **{s_pojo['mem_avg']:.2f} / {s_pojo['mem_peak']:.2f} MB**")
+        lines.append("")
 
     lines.append("## Charts\n")
     lines.append("![gc_memory_detailed](./gc_memory_detailed.png)")
-    if s:
-        lines.append("![docker_cpu_mem_chart](./docker_cpu_mem_chart.png)")
+    if s_json or s_pojo:
+        lines.append("![docker_cpu_mem_chart_compare](./docker_cpu_mem_chart_compare.png)")
 
     (rep_dir / 'REPORT.md').write_text('\n'.join(lines), encoding='utf-8')
     print(rep_dir / 'REPORT.md')

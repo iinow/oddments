@@ -2,24 +2,23 @@
 
 ## Single-run benchmark results
 
-- JsonNode: 30758 ms, 325118.67 rows/s, mem_delta=38.49 MB
-- POJO: 29950 ms, 333889.82 rows/s, mem_delta=6.74 MB
+- JsonNode: 30644 ms, 326328.16 rows/s, mem_delta=38.49 MB
+- POJO: 29666 ms, 337086.23 rows/s, mem_delta=6.74 MB
 
-- Throughput compare: **POJO +2.70%** vs JsonNode
-- Time compare: **POJO faster by 808 ms**
+- Throughput compare: **POJO +3.30%** vs JsonNode
+- Time compare: **POJO faster by 978 ms**
 
 ## GC summary
 
-- JsonNode: events=756, pause_sum=509.55 ms, pause_max=16.10 ms, pause_p95=0.68 ms
-- POJO: events=459, pause_sum=250.11 ms, pause_max=18.87 ms, pause_p95=0.44 ms
+- JsonNode: events=756, pause_sum=515.94 ms, pause_max=15.91 ms, pause_p95=0.68 ms
+- POJO: events=459, pause_sum=252.27 ms, pause_max=18.38 ms, pause_p95=0.45 ms
 
-## Container CPU/Memory stats
+## Container CPU/Memory stats (mode-separated)
 
-- samples: 37
-- CPU avg: **100.41%**, CPU peak: **103.46%**
-- Mem avg: **0.00 MB**, Mem peak: **0.00 MB**
+- JsonNode samples: 13, CPU avg/peak: **92.84% / 102.99%**, Mem avg/peak: **84.24 / 92.45 MB**
+- POJO samples: 13, CPU avg/peak: **92.91% / 104.06%**, Mem avg/peak: **86.45 / 94.70 MB**
 
 ## Charts
 
 ![gc_memory_detailed](./gc_memory_detailed.png)
-![docker_cpu_mem_chart](./docker_cpu_mem_chart.png)
+![docker_cpu_mem_chart_compare](./docker_cpu_mem_chart_compare.png)
