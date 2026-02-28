@@ -17,37 +17,35 @@ echo "[1/3] Building Docker image: $IMAGE_NAME"
 docker build -t "$IMAGE_NAME" .
 
 echo "[2/3] Running benchmark in constrained container (CPU=$CPU / MEM=$MEMORY, rows=$ROWS)"
+HEAPDUMP_JSON=""
+HEAPDUMP_POJO=""
+if [ "$DO_HEAPDUMP" = "true" ]; then
+  HEAPDUMP_JSON="--heapDump /app/out/${OUT_SUBDIR}/jsonnode.hprof"
+  HEAPDUMP_POJO="--heapDump /app/out/${OUT_SUBDIR}/pojo.hprof"
+fi
+
 docker run --rm \
+  --entrypoint bash \
   --cpus="$CPU" \
   --memory="$MEMORY" \
   -v "$OUT_DIR:/app/out" \
   "$IMAGE_NAME" \
-  bash -lc "
+  -lc "
     set -e
-    # Ensure dataset for requested size
-    java -Xms${HEAP} -Xmx${HEAP} -cp 'build/classes:lib/*' \
-      com.oddments.bench.DeserializeBenchmarkApp \
-      --mode jsonnode --rows ${ROWS} \
-      --data /app/build/data/payload_java_${ROWS}.ndjson \
-      --out /app/out/${OUT_SUBDIR}/_warmup_generate.csv >/dev/null
+    APP=/app/oddments/bin/oddments
+    DATA=/app/out/payload_java_${ROWS}.ndjson
 
-    # JsonNode
-    java -Xms${HEAP} -Xmx${HEAP} \
-      -Xlog:gc*,gc+heap=debug:file=/app/out/${OUT_SUBDIR}/gc_jsonnode.log:time,uptime,level,tags \
-      -cp 'build/classes:lib/*' com.oddments.bench.DeserializeBenchmarkApp \
-      --mode jsonnode --rows ${ROWS} \
-      --data /app/build/data/payload_java_${ROWS}.ndjson \
-      --out /app/out/${OUT_SUBDIR}/jsonnode.csv \
-      $( [ "$DO_HEAPDUMP" = "true" ] && echo "--heapDump /app/out/${OUT_SUBDIR}/jsonnode.hprof" )
+    # ensure dataset exists
+    JAVA_TOOL_OPTIONS='-Xms${HEAP} -Xmx${HEAP}' \"\$APP\" \
+      --mode jsonnode --rows ${ROWS} --data \"\$DATA\" --out /app/out/${OUT_SUBDIR}/_warmup_generate.csv >/dev/null
 
-    # POJO
-    java -Xms${HEAP} -Xmx${HEAP} \
-      -Xlog:gc*,gc+heap=debug:file=/app/out/${OUT_SUBDIR}/gc_pojo.log:time,uptime,level,tags \
-      -cp 'build/classes:lib/*' com.oddments.bench.DeserializeBenchmarkApp \
-      --mode pojo --rows ${ROWS} \
-      --data /app/build/data/payload_java_${ROWS}.ndjson \
-      --out /app/out/${OUT_SUBDIR}/pojo.csv \
-      $( [ "$DO_HEAPDUMP" = "true" ] && echo "--heapDump /app/out/${OUT_SUBDIR}/pojo.hprof" )
+    # JsonNode run
+    JAVA_TOOL_OPTIONS='-Xms${HEAP} -Xmx${HEAP} -Xlog:gc*,gc+heap=debug:file=/app/out/${OUT_SUBDIR}/gc_jsonnode.log:time,uptime,level,tags' \"\$APP\" \
+      --mode jsonnode --rows ${ROWS} --data \"\$DATA\" --out /app/out/${OUT_SUBDIR}/jsonnode.csv ${HEAPDUMP_JSON}
+
+    # POJO run
+    JAVA_TOOL_OPTIONS='-Xms${HEAP} -Xmx${HEAP} -Xlog:gc*,gc+heap=debug:file=/app/out/${OUT_SUBDIR}/gc_pojo.log:time,uptime,level,tags' \"\$APP\" \
+      --mode pojo --rows ${ROWS} --data \"\$DATA\" --out /app/out/${OUT_SUBDIR}/pojo.csv ${HEAPDUMP_POJO}
   "
 
 if [ "$DO_ANALYZE" = "true" ]; then
