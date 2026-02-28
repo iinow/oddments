@@ -11,6 +11,8 @@ OUT_SUBDIR="${OUT_SUBDIR:-docker_bench}"
 DO_HEAPDUMP="${DO_HEAPDUMP:-true}"
 DO_ANALYZE="${DO_ANALYZE:-true}"
 DO_STATS="${DO_STATS:-true}"
+DO_JFR="${DO_JFR:-true}"
+JFR_SETTINGS="${JFR_SETTINGS:-profile}"
 SAMPLE_SEC="${SAMPLE_SEC:-1}"
 
 mkdir -p "$OUT_DIR/$OUT_SUBDIR"
@@ -39,9 +41,13 @@ run_mode() {
   local csv_out="/app/out/${OUT_SUBDIR}/${mode}.csv"
   local stats_csv="$OUT_DIR/$OUT_SUBDIR/${mode}_stats.csv"
   local heap_arg=""
+  local jfr_opts=""
 
   if [ "$DO_HEAPDUMP" = "true" ]; then
     heap_arg="--heapDump /app/out/${OUT_SUBDIR}/${mode}.hprof"
+  fi
+  if [ "$DO_JFR" = "true" ]; then
+    jfr_opts="-XX:StartFlightRecording=filename=/app/out/${OUT_SUBDIR}/${mode}.jfr,settings=${JFR_SETTINGS},dumponexit=true"
   fi
 
   local cid_file
@@ -55,7 +61,7 @@ run_mode() {
     --cpus="$CPU" --memory="$MEMORY" \
     -v "$OUT_DIR:/app/out" \
     "$IMAGE_NAME" -lc "
-      JAVA_TOOL_OPTIONS='-Xms${HEAP} -Xmx${HEAP} -Xlog:gc*,gc+heap=debug:file=${gc_log}:time,uptime,level,tags' ${APP_CMD} \
+      JAVA_TOOL_OPTIONS='-Xms${HEAP} -Xmx${HEAP} -Xlog:gc*,gc+heap=debug:file=${gc_log}:time,uptime,level,tags ${jfr_opts}' ${APP_CMD} \
         --mode ${mode} --rows ${ROWS} --data ${DATA_PATH} --out ${csv_out} ${heap_arg}
     " >/dev/null
 
@@ -127,7 +133,15 @@ if [ "$DO_STATS" = "true" ]; then
   cp -f "$OUT_DIR/$OUT_SUBDIR/pojo_stats.csv" "$REPORT_DIR/pojo_stats.csv"
   cp -f "$OUT_DIR/$OUT_SUBDIR/docker_cpu_mem_chart_compare.png" "$REPORT_DIR/docker_cpu_mem_chart_compare.png"
 fi
+if [ "$DO_JFR" = "true" ]; then
+  cp -f "$OUT_DIR/$OUT_SUBDIR/jsonnode.jfr" "$REPORT_DIR/jsonnode.jfr" || true
+  cp -f "$OUT_DIR/$OUT_SUBDIR/pojo.jfr" "$REPORT_DIR/pojo.jfr" || true
+fi
 
 python3 generate_docker_report.py --out-subdir "$OUT_SUBDIR" --out-root "$OUT_DIR" --reports-root "$(pwd)/reports"
 
 echo "Done. Output dir: $OUT_DIR/$OUT_SUBDIR"
+if [ "$DO_JFR" = "true" ]; then
+  echo "- jsonnode.jfr"
+  echo "- pojo.jfr"
+fi

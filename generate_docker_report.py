@@ -94,6 +94,13 @@ def main():
     if s_json or s_pojo:
         lines.append("![docker_cpu_mem_chart_compare](./docker_cpu_mem_chart_compare.png)")
 
+    if (rep_dir / 'jsonnode.jfr').exists() or (rep_dir / 'pojo.jfr').exists():
+        lines.append("\n## JFR files\n")
+        if (rep_dir / 'jsonnode.jfr').exists():
+            lines.append("- jsonnode.jfr")
+        if (rep_dir / 'pojo.jfr').exists():
+            lines.append("- pojo.jfr")
+
     (rep_dir / 'REPORT.md').write_text('\n'.join(lines), encoding='utf-8')
     print(rep_dir / 'REPORT.md')
 

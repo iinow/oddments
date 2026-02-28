@@ -21,6 +21,8 @@ ROWS=10000000 HEAP=200m OUT_SUBDIR=docker_10m ./run_docker_benchmark.sh
 - Heapdump on/off: `DO_HEAPDUMP=true|false`
 - 분석 산출물 on/off: `DO_ANALYZE=true|false`
 - Docker stats(CPU/메모리) on/off: `DO_STATS=true|false`
+- JFR 생성 on/off: `DO_JFR=true|false`
+- JFR 설정: `JFR_SETTINGS=profile|default`
 - stats 샘플링 주기(초): `SAMPLE_SEC=1`
 
 직접 실행하고 싶으면:
