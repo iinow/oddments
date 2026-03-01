@@ -11,7 +11,7 @@ COPY src ./src
 RUN gradle --no-daemon clean installDist
 
 # ----- runtime stage -----
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jdk
 WORKDIR /app
 
 COPY --from=builder /app/build/install/oddments ./oddments

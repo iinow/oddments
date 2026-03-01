@@ -2,22 +2,27 @@ package com.oddments.bench;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.sun.management.HotSpotDiagnosticMXBean;
+import org.simdjson.JsonValue;
+import org.simdjson.SimdJsonParser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
 public class DeserializeBenchmarkApp {
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    // SimdJsonParser is created lazily in runSimdJson().
 
     public static void main(String[] args) throws Exception {
         int rows = intArg(args, "--rows", 1_000_000);
@@ -38,30 +43,32 @@ public class DeserializeBenchmarkApp {
         String heapDump = strArg(args, "--heapDump", "");
 
         System.out.println("[2/3] Warm-up... mode=" + mode);
-        if ("jsonnode".equals(mode)) {
-            runJsonNode(dataPath, 50_000);
-        } else if ("pojo".equals(mode)) {
-            runPojo(dataPath, 50_000);
-        } else {
-            runJsonNode(dataPath, 50_000);
-            runPojo(dataPath, 50_000);
+        switch (mode) {
+            case "jsonnode" -> runJsonNode(dataPath, 50_000);
+            case "pojo" -> runPojo(dataPath, 50_000);
+            case "simdjson" -> runSimdJson(dataPath, 50_000);
+            default -> {
+                runJsonNode(dataPath, 50_000);
+                runPojo(dataPath, 50_000);
+                runSimdJson(dataPath, 50_000);
+            }
         }
 
         System.out.println("[3/3] Benchmarking full file...");
-        if ("jsonnode".equals(mode)) {
-            Result jsonNode = runJsonNode(dataPath, Integer.MAX_VALUE);
-            writeCsv(outCsv, jsonNode);
-            printSummarySingle(jsonNode, outCsv);
-        } else if ("pojo".equals(mode)) {
-            Result pojo = runPojo(dataPath, Integer.MAX_VALUE);
-            writeCsv(outCsv, pojo);
-            printSummarySingle(pojo, outCsv);
-        } else {
-            Result jsonNode = runJsonNode(dataPath, Integer.MAX_VALUE);
-            Result pojo = runPojo(dataPath, Integer.MAX_VALUE);
-            writeCsv(outCsv, jsonNode, pojo);
-            printSummary(jsonNode, pojo, outCsv);
+        List<Result> results = new ArrayList<>();
+        switch (mode) {
+            case "jsonnode" -> results.add(runJsonNode(dataPath, Integer.MAX_VALUE));
+            case "pojo" -> results.add(runPojo(dataPath, Integer.MAX_VALUE));
+            case "simdjson" -> results.add(runSimdJson(dataPath, Integer.MAX_VALUE));
+            default -> {
+                results.add(runJsonNode(dataPath, Integer.MAX_VALUE));
+                results.add(runPojo(dataPath, Integer.MAX_VALUE));
+                results.add(runSimdJson(dataPath, Integer.MAX_VALUE));
+            }
         }
+
+        writeCsv(outCsv, results.toArray(Result[]::new));
+        printSummary(results, outCsv);
 
         if (!heapDump.isBlank()) {
             dumpHeap(heapDump);
@@ -159,6 +166,30 @@ public class DeserializeBenchmarkApp {
         return new Result("POJO", count, millis, memBefore, memAfter, checksum);
     }
 
+    private static Result runSimdJson(Path path, int maxRows) throws IOException {
+        long memBefore = usedMem();
+        Instant start = Instant.now();
+        long checksum = 0;
+        int count = 0;
+        SimdJsonParser simd = new SimdJsonParser(1 << 20, 128);
+
+        try (BufferedReader br = Files.newBufferedReader(path)) {
+            String line;
+            while ((line = br.readLine()) != null && count < maxRows) {
+                byte[] bytes = line.getBytes(StandardCharsets.UTF_8);
+                JsonValue v = simd.parse(bytes, bytes.length);
+                checksum += v.get("value").asLong();
+                checksum += v.get("nested").get("child").get("child").get("child")
+                        .get("child").get("child").get("score").asLong();
+                count++;
+            }
+        }
+
+        long millis = Duration.between(start, Instant.now()).toMillis();
+        long memAfter = usedMem();
+        return new Result("SimdJson", count, millis, memBefore, memAfter, checksum);
+    }
+
     private static long usedMem() {
         Runtime rt = Runtime.getRuntime();
         return rt.totalMemory() - rt.freeMemory();
@@ -186,28 +217,13 @@ public class DeserializeBenchmarkApp {
         }
     }
 
-    private static void printSummary(Result jsonNode, Result pojo, Path outCsv) {
+    private static void printSummary(List<Result> results, Path outCsv) {
         System.out.println("\n===== RESULT =====");
-        System.out.printf(Locale.US, "JsonNode: %d ms, %.2f rows/s, Δmem=%.2f MB%n",
-                jsonNode.millis, jsonNode.rowsPerSec(), jsonNode.memDeltaMb());
-        System.out.printf(Locale.US, "POJO    : %d ms, %.2f rows/s, Δmem=%.2f MB%n",
-                pojo.millis, pojo.rowsPerSec(), pojo.memDeltaMb());
-        System.out.println("CSV saved: " + outCsv);
-    }
-
-    private static void printSummarySingle(Result r, Path outCsv) {
-        System.out.println("\n===== RESULT =====");
-        System.out.printf(Locale.US, "%s: %d ms, %.2f rows/s, Δmem=%.2f MB%n",
-                r.mode, r.millis, r.rowsPerSec(), r.memDeltaMb());
-        System.out.println("CSV saved: " + outCsv);
-    }
-
-    private static void sleep(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
+        for (Result r : results) {
+            System.out.printf(Locale.US, "%s: %d ms, %.2f rows/s, Δmem=%.2f MB%n",
+                    r.mode, r.millis, r.rowsPerSec(), r.memDeltaMb());
         }
+        System.out.println("CSV saved: " + outCsv);
     }
 
     private record Result(String mode, int rows, long millis, long memBefore, long memAfter, long checksum) {

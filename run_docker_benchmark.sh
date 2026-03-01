@@ -14,6 +14,9 @@ DO_STATS="${DO_STATS:-true}"
 DO_JFR="${DO_JFR:-true}"
 JFR_SETTINGS="${JFR_SETTINGS:-profile}"
 SAMPLE_SEC="${SAMPLE_SEC:-1}"
+SIMD_SPECIES="${SIMD_SPECIES:-256}"
+JVM_MODULE_OPTS="--add-modules jdk.incubator.vector -Dorg.simdjson.species=${SIMD_SPECIES}"
+JVM_HEAP_OPTS="-Xms${HEAP} -Xmx${HEAP}"
 
 mkdir -p "$OUT_DIR/$OUT_SUBDIR"
 rm -f "$OUT_DIR/$OUT_SUBDIR"/*
@@ -29,7 +32,7 @@ ensure_data() {
     --cpus="$CPU" --memory="$MEMORY" \
     -v "$OUT_DIR:/app/out" \
     "$IMAGE_NAME" -lc "
-      JAVA_TOOL_OPTIONS='-Xms${HEAP} -Xmx${HEAP}' ${APP_CMD} \
+      JDK_JAVA_OPTIONS='${JVM_MODULE_OPTS}' JAVA_TOOL_OPTIONS='${JVM_HEAP_OPTS}' ${APP_CMD} \
         --mode jsonnode --rows ${ROWS} --data ${DATA_PATH} \
         --out /app/out/${OUT_SUBDIR}/_warmup_generate.csv >/dev/null
     " >/dev/null
@@ -61,7 +64,7 @@ run_mode() {
     --cpus="$CPU" --memory="$MEMORY" \
     -v "$OUT_DIR:/app/out" \
     "$IMAGE_NAME" -lc "
-      JAVA_TOOL_OPTIONS='-Xms${HEAP} -Xmx${HEAP} -Xlog:gc*,gc+heap=debug:file=${gc_log}:time,uptime,level,tags ${jfr_opts}' ${APP_CMD} \
+      JDK_JAVA_OPTIONS='${JVM_MODULE_OPTS}' JAVA_TOOL_OPTIONS='${JVM_HEAP_OPTS} -Xlog:gc*,gc+heap=debug:file=${gc_log}:time,uptime,level,tags ${jfr_opts}' ${APP_CMD} \
         --mode ${mode} --rows ${ROWS} --data ${DATA_PATH} --out ${csv_out} ${heap_arg}
     " >/dev/null
 
@@ -100,9 +103,10 @@ run_mode() {
 echo "[2/4] Preparing dataset"
 ensure_data
 
-echo "[3/4] Running JsonNode + POJO separately"
+echo "[3/4] Running JsonNode + POJO + SimdJson separately"
 run_mode jsonnode
 run_mode pojo
+run_mode simdjson
 
 if [ "$DO_ANALYZE" = "true" ]; then
   echo "[4/4] Generating analysis artifacts"
@@ -119,6 +123,7 @@ if [ "$DO_STATS" = "true" ]; then
   python3 plot_docker_stats.py \
     --jsonnode "$OUT_DIR/$OUT_SUBDIR/jsonnode_stats.csv" \
     --pojo "$OUT_DIR/$OUT_SUBDIR/pojo_stats.csv" \
+    --simdjson "$OUT_DIR/$OUT_SUBDIR/simdjson_stats.csv" \
     --out "$OUT_DIR/$OUT_SUBDIR/docker_cpu_mem_chart_compare.png"
 fi
 
@@ -126,16 +131,19 @@ REPORT_DIR="$(pwd)/reports/$OUT_SUBDIR"
 mkdir -p "$REPORT_DIR"
 cp -f "$OUT_DIR/$OUT_SUBDIR/jsonnode.csv" "$REPORT_DIR/jsonnode.csv"
 cp -f "$OUT_DIR/$OUT_SUBDIR/pojo.csv" "$REPORT_DIR/pojo.csv"
+cp -f "$OUT_DIR/$OUT_SUBDIR/simdjson.csv" "$REPORT_DIR/simdjson.csv" || true
 cp -f "$OUT_DIR/$OUT_SUBDIR/gc_memory_detailed_summary.csv" "$REPORT_DIR/gc_memory_detailed_summary.csv"
 cp -f "$OUT_DIR/$OUT_SUBDIR/gc_memory_detailed.png" "$REPORT_DIR/gc_memory_detailed.png"
 if [ "$DO_STATS" = "true" ]; then
   cp -f "$OUT_DIR/$OUT_SUBDIR/jsonnode_stats.csv" "$REPORT_DIR/jsonnode_stats.csv"
   cp -f "$OUT_DIR/$OUT_SUBDIR/pojo_stats.csv" "$REPORT_DIR/pojo_stats.csv"
+  cp -f "$OUT_DIR/$OUT_SUBDIR/simdjson_stats.csv" "$REPORT_DIR/simdjson_stats.csv" || true
   cp -f "$OUT_DIR/$OUT_SUBDIR/docker_cpu_mem_chart_compare.png" "$REPORT_DIR/docker_cpu_mem_chart_compare.png"
 fi
 if [ "$DO_JFR" = "true" ]; then
   cp -f "$OUT_DIR/$OUT_SUBDIR/jsonnode.jfr" "$REPORT_DIR/jsonnode.jfr" || true
   cp -f "$OUT_DIR/$OUT_SUBDIR/pojo.jfr" "$REPORT_DIR/pojo.jfr" || true
+  cp -f "$OUT_DIR/$OUT_SUBDIR/simdjson.jfr" "$REPORT_DIR/simdjson.jfr" || true
 fi
 
 python3 generate_docker_report.py --out-subdir "$OUT_SUBDIR" --out-root "$OUT_DIR" --reports-root "$(pwd)/reports"
