@@ -1,2 +1,2 @@
 mode,rows,millis,rows_per_sec,mem_before_mb,mem_after_mb,mem_delta_mb,checksum
-POJO,10000000,30324,329771.80,10.97,19.74,8.77,50475979725
+POJO,10000000,30672,326030.26,10.97,19.74,8.77,50475979725

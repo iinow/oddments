@@ -3,7 +3,6 @@ package com.oddments.bench;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.management.HotSpotDiagnosticMXBean;
-import org.simdjson.JsonValue;
 import org.simdjson.SimdJsonParser;
 
 import java.io.BufferedReader;
@@ -177,10 +176,9 @@ public class DeserializeBenchmarkApp {
             String line;
             while ((line = br.readLine()) != null && count < maxRows) {
                 byte[] bytes = line.getBytes(StandardCharsets.UTF_8);
-                JsonValue v = simd.parse(bytes, bytes.length);
-                checksum += v.get("value").asLong();
-                checksum += v.get("nested").get("child").get("child").get("child")
-                        .get("child").get("child").get("score").asLong();
+                Payload p = simd.parse(bytes, bytes.length, Payload.class);
+                checksum += p.value();
+                checksum += p.nested().child().child().child().child().child().score();
                 count++;
             }
         }

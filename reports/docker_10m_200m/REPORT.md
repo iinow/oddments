@@ -2,25 +2,25 @@
 
 ## Single-run benchmark results
 
-- JsonNode: 31822 ms, 314248.00 rows/s, mem_delta=-11.23 MB
-- POJO: 30324 ms, 329771.80 rows/s, mem_delta=8.77 MB
-- SimdJson: 472170 ms, 21178.81 rows/s, mem_delta=21.52 MB
+- JsonNode: 32162 ms, 310925.94 rows/s, mem_delta=-11.21 MB
+- POJO: 30672 ms, 326030.26 rows/s, mem_delta=8.77 MB
+- SimdJson: 855953 ms, 11682.88 rows/s, mem_delta=16.20 MB
 
-- Throughput compare: **POJO +4.94%** vs JsonNode
-- Time compare: **POJO faster by 1498 ms**
-- SimdJson throughput vs JsonNode: **-93.26%**
-- SimdJson throughput vs POJO: **-93.58%**
+- Throughput compare: **POJO +4.86%** vs JsonNode
+- Time compare: **POJO faster by 1490 ms**
+- SimdJson throughput vs JsonNode: **-96.24%**
+- SimdJson throughput vs POJO: **-96.42%**
 
 ## GC summary
 
-- JsonNode: events=757, pause_sum=600.60 ms, pause_max=60.29 ms, pause_p95=0.77 ms
-- POJO: events=460, pause_sum=233.71 ms, pause_max=30.39 ms, pause_p95=0.54 ms
+- JsonNode: events=757, pause_sum=544.57 ms, pause_max=23.93 ms, pause_p95=0.76 ms
+- POJO: events=460, pause_sum=236.23 ms, pause_max=25.28 ms, pause_p95=0.54 ms
 
 ## Container CPU/Memory stats (mode-separated)
 
-- JsonNode samples: 14, CPU avg/peak: **93.43% / 103.06%**, Mem avg/peak: **94.98 / 107.20 MB**
-- POJO samples: 13, CPU avg/peak: **100.38% / 102.91%**, Mem avg/peak: **104.55 / 109.40 MB**
-- SimdJson samples: 186, CPU avg/peak: **99.77% / 102.87%**, Mem avg/peak: **157.42 / 161.30 MB**
+- JsonNode samples: 14, CPU avg/peak: **93.32% / 104.07%**, Mem avg/peak: **95.05 / 106.30 MB**
+- POJO samples: 13, CPU avg/peak: **100.38% / 102.21%**, Mem avg/peak: **104.59 / 108.90 MB**
+- SimdJson samples: 336, CPU avg/peak: **100.04% / 102.80%**, Mem avg/peak: **155.19 / 158.80 MB**
 
 ## Charts
 
